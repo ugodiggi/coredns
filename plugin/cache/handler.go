@@ -104,6 +104,8 @@ func (c *Cache) getIgnoreTTL(now time.Time, state request.Request, server string
 		ttl := i.(*item).ttl(now)
 		if ttl > 0 || (c.staleUpTo > 0 && -ttl < int(c.staleUpTo.Seconds())) {
 			cacheHits.WithLabelValues(server, Denial).Inc()
+		} else {
+			cacheMisses.WithLabelValues(server).Inc()
 		}
 		return i.(*item)
 	}
@@ -111,6 +113,8 @@ func (c *Cache) getIgnoreTTL(now time.Time, state request.Request, server string
 		ttl := i.(*item).ttl(now)
 		if ttl > 0 || (c.staleUpTo > 0 && -ttl < int(c.staleUpTo.Seconds())) {
 			cacheHits.WithLabelValues(server, Success).Inc()
+		} else {
+			cacheMisses.WithLabelValues(server).Inc()
 		}
 		return i.(*item)
 	}
