@@ -15,6 +15,8 @@ const (
 	NoError Type = iota
 	// NameError is a NXDOMAIN in header, SOA in auth.
 	NameError
+	// NonAuthNameError is a NXDOMAIN in header, no SOA in auth.
+	NonAuthNameError
 	// ServerError is a set of errors we want to cache, for now it contains SERVFAIL and NOTIMPL.
 	ServerError
 	// NoData indicates name found, but not the type: NOERROR in header, SOA in auth.
@@ -30,14 +32,15 @@ const (
 )
 
 var toString = map[Type]string{
-	NoError:     "NOERROR",
-	NameError:   "NXDOMAIN",
-	ServerError: "SERVERERROR",
-	NoData:      "NODATA",
-	Delegation:  "DELEGATION",
-	Meta:        "META",
-	Update:      "UPDATE",
-	OtherError:  "OTHERERROR",
+	NoError:          "NOERROR",
+	NameError:        "NXDOMAIN",
+	NonAuthNameError: "NXDOMAINNOSOA",
+	ServerError:      "SERVERERROR",
+	NoData:           "NODATA",
+	Delegation:       "DELEGATION",
+	Meta:             "META",
+	Update:           "UPDATE",
+	OtherError:       "OTHERERROR",
 }
 
 func (t Type) String() string { return toString[t] }
@@ -105,8 +108,16 @@ func Typify(m *dns.Msg, t time.Time) (Type, *dns.OPT) {
 	if soa && m.Rcode == dns.RcodeSuccess {
 		return NoData, opt
 	}
-	if soa && m.Rcode == dns.RcodeNameError {
-		return NameError, opt
+	if m.Rcode == dns.RcodeNameError {
+		if soa {
+			return NameError, opt
+		} else if len(m.Answer) == 0 {
+			return NonAuthNameError, opt
+		} else {
+			// This is an NXDOMAIN response that includes a non-empty Answer.
+			// It's self-contradicting and we are not going to cache it.
+			return OtherError, opt
+		}
 	}
 
 	if m.Rcode == dns.RcodeServerFailure || m.Rcode == dns.RcodeNotImplemented {

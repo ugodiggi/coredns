@@ -47,7 +47,7 @@ func (d Dnssec) Sign(state request.Request, now time.Time, server string) *dns.M
 	incep, expir := incepExpir(now)
 
 	mt, _ := response.Typify(req, time.Now().UTC()) // TODO(miek): need opt record here?
-	if mt == response.Delegation {
+	if mt == response.Delegation || mt == response.NonAuthNameError {
 		return req
 	}
 
