@@ -1,7 +1,7 @@
 #! /bin/bash
 set -eux
 
-export rev="0.8"
+export rev="0.9"
 make -f Makefile.release release
 make -f Makefile.release docker
 docker tag coredns/coredns:coredns-amd64 667043388539.dkr.ecr.us-east-1.amazonaws.com/coredns:ugo-$rev
