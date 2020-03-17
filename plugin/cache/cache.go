@@ -232,8 +232,8 @@ func (w *ResponseWriter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
-// CacheClass is the type of cache, one of Success or Denial
-type CacheClass = string
+// cacheClass is the type of cache, one of Success or Denial
+type cacheClass = string
 
 const (
 	maxTTL  = dnsutil.MaximumDefaulTTL
@@ -244,7 +244,7 @@ const (
 	defaultCap = 10000 // default capacity of the cache.
 
 	// Success is the class for caching positive caching.
-	Success CacheClass = "success"
+	Success cacheClass = "success"
 	// Denial is the class defined for negative caching.
-	Denial CacheClass = "denial"
+	Denial cacheClass = "denial"
 )
