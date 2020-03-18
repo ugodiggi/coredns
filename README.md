@@ -1,3 +1,16 @@
+# COMPASS SPECIFIC INSTRUCTIONS
+
+This is a version of coredns forked from coredns/coredns.
+
+The main reason for the fork is that we currently need the fixes in the ugo/non-auth-name-error so
+that our EKS cluster does not explode under DNS back pressure.
+
+In order to release this code on urbancompass, you should just:
+* update `compass-make-release.sh` to have a new release number
+* run `./compass-make-release.sh`
+This will upload a new coredns docker image to a number of ECR repositories.
+
+# ORIGINAL DOCUMENTATION
 [![CoreDNS](https://coredns.io/images/CoreDNS_Colour_Horizontal.png)](https://coredns.io)
 
 [![Documentation](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/coredns/coredns)
