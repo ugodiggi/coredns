@@ -1,4 +1,6 @@
 #! /bin/bash
+#
+# Release this coredns binary for Compass.
 set -eux
 
 export rev="compass-1.6.7.1"
