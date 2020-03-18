@@ -27,14 +27,16 @@ func (c *Cache) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 	server := metrics.WithServer(ctx)
 
 	ttl := 0
-	i := c.getIgnoreTTL(now, state, server)
+	i, iClass := c.getIgnoreTTL(now, state, server)
 	if i != nil {
 		ttl = i.ttl(now)
 	}
 	if i == nil || -ttl >= int(c.staleUpTo.Seconds()) {
+		cacheMisses.WithLabelValues(server).Inc()
 		crr := &ResponseWriter{ResponseWriter: w, Cache: c, state: state, server: server}
 		return plugin.NextOrFailure(c.Name(), c.Next, ctx, crr, r)
 	}
+	cacheHits.WithLabelValues(server, iClass).Inc()
 	if ttl < 0 {
 		servedStale.WithLabelValues(server).Inc()
 		// Adjust the time to get a 0 TTL in the reply built from a stale item.
@@ -96,26 +98,16 @@ func (c *Cache) get(now time.Time, state request.Request, server string) (*item,
 	return nil, false
 }
 
-// getIgnoreTTL unconditionally returns an item if it exists in the cache.
-func (c *Cache) getIgnoreTTL(now time.Time, state request.Request, server string) *item {
+// getIgnoreTTL unconditionally returns an item, and the cacheClass of the cache if it exists in either the Success or Denial cache.
+func (c *Cache) getIgnoreTTL(now time.Time, state request.Request, server string) (*item, cacheClass) {
 	k := hash(state.Name(), state.QType(), state.Do())
-
 	if i, ok := c.ncache.Get(k); ok {
-		ttl := i.(*item).ttl(now)
-		if ttl > 0 || (c.staleUpTo > 0 && -ttl < int(c.staleUpTo.Seconds())) {
-			cacheHits.WithLabelValues(server, Denial).Inc()
-		}
-		return i.(*item)
+		return i.(*item), Denial
 	}
 	if i, ok := c.pcache.Get(k); ok {
-		ttl := i.(*item).ttl(now)
-		if ttl > 0 || (c.staleUpTo > 0 && -ttl < int(c.staleUpTo.Seconds())) {
-			cacheHits.WithLabelValues(server, Success).Inc()
-		}
-		return i.(*item)
+		return i.(*item), Success
 	}
-	cacheMisses.WithLabelValues(server).Inc()
-	return nil
+	return nil, ""
 }
 
 func (c *Cache) exists(state request.Request) *item {

@@ -48,6 +48,31 @@ func TestTypifyRRSIG(t *testing.T) {
 	}
 }
 
+func TestTypifyNonAuthNameError(t *testing.T) {
+	// create an NXDOMAIN message that does not have SOA, and does not have any answer
+	m := new(dns.Msg)
+	m.SetQuestion("bar.www.example.org.", dns.TypeAAAA)
+	m.Rcode = dns.RcodeNameError
+	mt, _ := Typify(m, time.Now().UTC())
+	if mt != NonAuthNameError {
+		t.Errorf("Impossible message not typified as NonAuthNameError, got %s", mt)
+	}
+}
+
+func TestTypifyNameError(t *testing.T) {
+	// create an NXDOMAIN message has an SOA header
+	m := new(dns.Msg)
+	m.SetQuestion("bar.www.example.org.", dns.TypeAAAA)
+	m.Rcode = dns.RcodeNameError
+	m.Ns = []dns.RR{
+		test.SOA("example.org. 3600 IN	SOA	sns.dns.icann.org. noc.dns.icann.org. 2016082540 7200 3600 1209600 3600"),
+	}
+	mt, _ := Typify(m, time.Now().UTC())
+	if mt != NameError {
+		t.Errorf("Impossible message not typified as NameError, got %s", mt)
+	}
+}
+
 func TestTypifyImpossible(t *testing.T) {
 	// create impossible message that denies its own existence
 	m := new(dns.Msg)

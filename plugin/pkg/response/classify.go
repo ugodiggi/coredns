@@ -51,7 +51,7 @@ func Classify(t Type) Class {
 	switch t {
 	case NoError, Delegation:
 		return Success
-	case NameError, NoData:
+	case NameError, NonAuthNameError, NoData:
 		return Denial
 	case OtherError:
 		fallthrough
